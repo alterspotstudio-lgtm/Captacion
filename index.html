@@ -488,7 +488,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
       <div class="f-sep"></div>
       <div class="fi" style="margin-bottom:20px;">
         <label class="fi-label">Municipio</label>
-        <select class="fi-input" id="f_zona" onchange="onInput('f_zona','sc_zona');if(typeof updateStepNav==='function')updateStepNav();" style="background:#111;color:#fff;appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:32px;background-image:url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path fill=\'rgba(198,168,107,0.6)\' d=\'M6 8L0 0h12z\'/></svg>');background-repeat:no-repeat;background-position:right 12px center;">
+        <select class="fi-input" id="f_zona" onchange="onInput('f_zona','sc_zona');onZonaChange();if(typeof updateStepNav==='function')updateStepNav();" style="background:#111;color:#fff;appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:32px;background-image:url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path fill=\'rgba(198,168,107,0.6)\' d=\'M6 8L0 0h12z\'/></svg>');background-repeat:no-repeat;background-position:right 12px center;">
           <option value="" disabled selected style="color:rgba(255,255,255,0.35)">— Selecciona tu municipio —</option>
           <option value="Cuernavaca">Cuernavaca</option>
           <option value="Temixco">Temixco</option>
@@ -506,6 +506,15 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
           <option value="Tlayacapan">Tlayacapan</option>
           <option value="Otro municipio">Otro municipio</option>
         </select>
+      </div>
+
+      <div class="fi" id="coloniaWrap" style="margin-bottom:20px;display:none;">
+        <label class="fi-label">Colonia o fraccionamiento</label>
+        <select class="fi-input" id="f_colonia" onchange="onColoniaChange()" style="background:#111;color:#fff;appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:32px;background-image:url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path fill=\'rgba(198,168,107,0.6)\' d=\'M6 8L0 0h12z\'/></svg>');background-repeat:no-repeat;background-position:right 12px center;">
+          <option value="" disabled selected style="color:rgba(255,255,255,0.35)">— Selecciona tu colonia —</option>
+        </select>
+        <input class="fi-input" type="text" id="f_colonia_otra" placeholder="Escribe el nombre de tu colonia" style="display:none;margin-top:8px;" oninput="onColoniaOtra()">
+        <div style="font-size:10px;font-weight:300;color:rgba(255,255,255,0.28);margin-top:6px;line-height:1.6;">Mientras más exacta sea la zona, más real es el precio de mercado que calculamos.</div>
       </div>
 
 
@@ -538,18 +547,29 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
         <button class="num-btn" onclick="stepNum('nv_ban',1)">+</button>
       </div>
 
-      <div class="fi-label">Medios baños</div>
-      <div class="num-row" style="margin-bottom:16px;">
-        <button class="num-btn" onclick="stepNum('nv_medio_ban',-1)">−</button>
-        <div class="num-val" id="nv_medio_ban">0</div>
-        <button class="num-btn" onclick="stepNum('nv_medio_ban',1)">+</button>
+      <div class="f-sep"></div>
+      <div style="margin-bottom:20px;">
+        <div class="fi-label">¿Cuántos metros de construcción tiene?</div>
+        <div class="sel-group" id="sg_m2c">
+          <div class="sel-item" data-val="80" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Menos de 100 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="125" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">100 – 150 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="200" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">150 – 250 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="320" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">250 – 400 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="500" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Más de 400 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="" onclick="selOne(this,'sg_m2c','m2c')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">No lo sé</div></div><div class="sel-badge pend">Pendiente</div></div>
+        </div>
       </div>
-
-      <div class="fi-label">Estacionamientos</div>
-      <div class="num-row">
-        <button class="num-btn" onclick="stepNum('nv_est',-1)">−</button>
-        <div class="num-val" id="nv_est">0</div>
-        <button class="num-btn" onclick="stepNum('nv_est',1)">+</button>
+      <div class="f-sep"></div>
+      <div style="margin-bottom:20px;">
+        <div class="fi-label">¿Y de terreno?</div>
+        <div class="sel-group" id="sg_m2t">
+          <div class="sel-item" data-val="120" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Menos de 150 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="225" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">150 – 300 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="450" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">300 – 600 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="800" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">600 – 1,000 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="1500" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Más de 1,000 m²</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="" onclick="selOne(this,'sg_m2t','m2t')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">No lo sé</div></div><div class="sel-badge pend">Pendiente</div></div>
+        </div>
       </div>
       <div class="step-lock-msg" id="propiedadLockMsg">Para continuar, selecciona el tipo de propiedad y el municipio.</div>
     </div>
@@ -578,6 +598,28 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
           <div class="sel-item" onclick="selOne(this,'sg_razon','razon')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Necesidad económica</div></div><div class="sel-badge pend">Pendiente</div></div>
           <div class="sel-item" onclick="selOne(this,'sg_razon','razon')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Cambio de ciudad</div></div><div class="sel-badge pend">Pendiente</div></div>
           <div class="sel-item" onclick="selOne(this,'sg_razon','razon')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Otro</div></div><div class="sel-badge pend">Pendiente</div></div>
+        </div>
+      </div>
+
+      <div class="f-sep"></div>
+      <div style="margin-bottom:20px;">
+        <div class="fi-label">¿Hace cuántos años se construyó?</div>
+        <div class="sel-group" id="sg_antig">
+          <div class="sel-item" data-val="3" onclick="selOne(this,'sg_antig','antig')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Menos de 5 años</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="10" onclick="selOne(this,'sg_antig','antig')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">5 – 15 años</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="22" onclick="selOne(this,'sg_antig','antig')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">15 – 30 años</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="40" onclick="selOne(this,'sg_antig','antig')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Más de 30 años</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="" onclick="selOne(this,'sg_antig','antig')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">No lo sé</div></div><div class="sel-badge pend">Pendiente</div></div>
+        </div>
+      </div>
+      <div class="f-sep"></div>
+      <div style="margin-bottom:20px;">
+        <div class="fi-label">¿En qué estado está?</div>
+        <div class="sel-group" id="sg_conserv">
+          <div class="sel-item" data-val="Obra nueva" onclick="selOne(this,'sg_conserv','conserv')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Obra nueva</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="Recién remodelada" onclick="selOne(this,'sg_conserv','conserv')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Recién remodelada</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="Buen estado" onclick="selOne(this,'sg_conserv','conserv')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Buen estado</div></div><div class="sel-badge pend">Pendiente</div></div>
+          <div class="sel-item" data-val="Necesita trabajo" onclick="selOne(this,'sg_conserv','conserv')"><div class="sel-dot">✓</div><div class="sel-text"><div class="sel-main">Necesita trabajo</div></div><div class="sel-badge pend">Pendiente</div></div>
         </div>
       </div>
       <div class="step-lock-msg" id="escenarioLockMsg">Para continuar, indica en cuánto tiempo deseas vender.</div>
@@ -736,15 +778,20 @@ let WA_NUM = "527779855687";
 const score = {
   sc_nombre:false, sc_telefono:false,
   sc_tipo:false, sc_zona:false, sc_precio:false,
-  sc_hab:false, sc_ban:false, sc_est:false,
+  sc_hab:false, sc_ban:false,
+  sc_m2c:false, sc_m2t:false,
   sc_tiempo:false, sc_razon:false,
+  sc_antig:false, sc_conserv:false,
   doc0:false,doc1:false,doc2:false,doc3:false,doc4:false,
   diag0:false,diag1:false,diag2:false,diag3:false,diag4:false
 };
 
 function calcPct(){
-  const done = Object.values(score).filter(Boolean).length;
-  return Math.round(done/20*100);
+  /* El denominador se calcula solo. Antes estaba clavado en 20: cada vez que
+     entraba o salía una pregunta, el porcentaje que llega a Airtable mentía. */
+  const total = Object.keys(score).length;
+  const done  = Object.values(score).filter(Boolean).length;
+  return total ? Math.round(done/total*100) : 0;
 }
 
 function updProgress(){
@@ -815,6 +862,69 @@ function onInput(inputId, scoreKey){
   if(typeof updateStepNav === 'function') updateStepNav();
 }
 
+// ── COLONIAS POR MUNICIPIO ──
+// Primera pasada, revisable: las colonias y fraccionamientos reconocibles de
+// cada municipio. No pretende ser el catálogo completo de SEPOMEX — para el
+// estudio de mercado sirven las que la gente nombra. "Otra colonia" abre un
+// campo libre, así que ninguna respuesta se pierde.
+var COLONIAS = {
+  "Cuernavaca": ["Acapantzingo","Ahuatepec","Alta Vista","Amatitlán","Analco","Antonio Barona","Bellavista","Buenavista","Cantarranas","Centro","Chamilpa","Chapultepec","Chipitlán","Delicias","El Empleado","El Vergel","Flores Magón","Jardines de Acapantzingo","Jardines de Cuernavaca","Jardines de Delicias","Jardines de Reforma","La Carolina","La Pradera","Lagunilla","Las Palmas","Las Quintas","Lomas de Cortés","Lomas de la Selva","Lomas de San Antón","Lomas de Tetela","Los Volcanes","Maravillas","Miraval","Ocotepec","Palmira","Provincias del Canadá","Rancho Cortés","Rancho Tetela","Real de Tetela","Reforma","San Antón","San Cristóbal","San Jerónimo","San Miguel Acapantzingo","Santa María Ahuacatitlán","Satélite","Tabachines","Teopanzolco","Tlaltenango","Tzompantle","Vista Hermosa"],
+  "Jiutepec": ["Atlacomulco","Bugambilias","Calera Chica","Centro","Civac","Cliserio Alanís","El Paraíso","Independencia","José G. Parres","Las Fincas","Las Rosas","Lomas de Jiutepec","Los Robles","Otilio Montaño","Paseos del Río","Prados de Cuernavaca","Progreso","San Gaspar","Sumiya","Tejalpa","Tlahuapan","Villas del Descanso","Vista Hermosa"],
+  "Temixco": ["3 de Mayo","Acatlipa","Alta Palmira","Azteca","Burgos","Burgos Bugambilias","Centro","Cuauhtémoc","Las Rosas","Lomas de Cuernavaca","Lomas del Carril","Miguel Hidalgo","Morelos","Pueblo Viejo","Rubén Jaramillo","Santa Úrsula"],
+  "Emiliano Zapata": ["Centro","El Calvario","Palo Escrito","Paraíso Country Club","Real de Tezoyuca","Tepetzingo","Tezoyuca"],
+  "Xochitepec": ["Alpuyeca","Atlacholoaya","Centro","Chiconcuac","Real del Puente","Villas de Xochitepec"],
+  "Cuautla": ["Casasano","Centro","Cuautlixco","Emiliano Zapata","Empleado Municipal","Gabriel Tepepa","Hermenegildo Galeana","Iztaccíhuatl","Lázaro Cárdenas","Otilio Montaño","Peña Flores","Santa Cruz","Tetelcingo","Vicente Guerrero"],
+  "Yautepec": ["Centro","Cocoyoc","Itzamatitlán","Ixtlahuacán","Oacalco","Oaxtepec","San Carlos"],
+  "Tepoztlán": ["Amatlán","Centro","Ixcatepec","Ocotitlán","San Andrés de la Cal","San Juan Tlacotenco","Santa Catarina","Santiago Tepetlapa","Valle de Atongo"],
+  "Jojutla": ["Centro","Chisco","Higuerón","Panchimalco","Pedro Amaro","Tehuixtla","Tlatenchi"],
+  "Puente de Ixtla": ["Centro","El Zapote","Tilzapotla","Xoxocotla"],
+  "Tlaltizapán": ["Acamilpa","Barranca Honda","Bonifacio García","Centro","Huatecalco","San Rafael Zaragoza","Santa Rosa Treinta","Temimilcingo","Ticumán"],
+  "Tlaquiltenango": ["Ajuchitlán","Centro","Chimalacatlán","Huautla"],
+  "Yecapixtla": ["Achichipico","Centro","Huexca","Juan Morales","Tecajec","Xochitlán"],
+  "Tlayacapan": ["Centro","San Agustín Amatlipac","San José de los Laureles"]
+};
+var COLONIA_VALOR = "";
+
+function onZonaChange(){
+  var muni = document.getElementById('f_zona').value;
+  var wrap = document.getElementById('coloniaWrap');
+  var sel  = document.getElementById('f_colonia');
+  var otra = document.getElementById('f_colonia_otra');
+  COLONIA_VALOR = "";
+  otra.value = ""; otra.style.display = 'none';
+  var lista = COLONIAS[muni] || [];
+  sel.innerHTML = '<option value="" disabled selected style="color:rgba(255,255,255,0.35)">— Selecciona tu colonia —</option>';
+  for(var i=0;i<lista.length;i++){
+    var o = document.createElement('option');
+    o.value = lista[i]; o.textContent = lista[i];
+    sel.appendChild(o);
+  }
+  var fin = document.createElement('option');
+  fin.value = "__otra__"; fin.textContent = "Otra colonia";
+  sel.appendChild(fin);
+  /* Si el municipio no tiene lista (Otro municipio), el campo libre se abre
+     directo: la pregunta no desaparece, solo cambia de forma. */
+  wrap.style.display = muni ? 'block' : 'none';
+  if(muni && !lista.length){ sel.value = "__otra__"; otra.style.display = 'block'; }
+}
+
+function onColoniaChange(){
+  var sel  = document.getElementById('f_colonia');
+  var otra = document.getElementById('f_colonia_otra');
+  if(sel.value === "__otra__"){
+    otra.style.display = 'block';
+    COLONIA_VALOR = otra.value.trim();
+    otra.focus();
+  } else {
+    otra.style.display = 'none';
+    COLONIA_VALOR = sel.value;
+  }
+}
+
+function onColoniaOtra(){
+  COLONIA_VALOR = document.getElementById('f_colonia_otra').value.trim();
+}
+
 // ── SINGLE SELECT (tipo, precio, tiempo, razon) ──
 function selOne(el, groupId, key){
   document.querySelectorAll("#"+groupId+" .sel-item").forEach(item=>{
@@ -836,7 +946,10 @@ function selOne(el, groupId, key){
 
 // ── STEPPERS ──
 const nv = {nv_hab:0,nv_ban:0,nv_medio_ban:0,nv_est:0};
-const nvScore = {nv_hab:"sc_hab",nv_ban:"sc_ban",nv_est:"sc_est"};
+/* nv_medio_ban y nv_est siguen declarados arriba pero ya no tienen control en
+   pantalla ni punto en el score: sus preguntas se mudaron a la propiedad, donde
+   sí se miden. Los campos de Airtable siguen existiendo y llegan vacíos. */
+const nvScore = {nv_hab:"sc_hab",nv_ban:"sc_ban"};
 function stepNum(id,d){
   nv[id]=Math.max(0,nv[id]+d);
   document.getElementById(id).textContent=nv[id];
@@ -978,8 +1091,27 @@ function completar(){
 
     fd.append('habitaciones',         String(nv.nv_hab));
     fd.append('banos',                String(nv.nv_ban));
-    fd.append('medios_banos',         String(nv.nv_medio_ban));
-    fd.append('estacionamientos',     String(nv.nv_est));
+    /* medios_banos y estacionamientos ya no se preguntan aquí, pero la llave se
+       sigue mandando vacía: el escenario 5211345 las tiene mapeadas por Field ID
+       y quitarlas del payload no rompe nada, pero dejarlas evita cualquier
+       sorpresa en Make. Estos dos datos se capturan en la propiedad. */
+    fd.append('medios_banos',         '');
+    fd.append('estacionamientos',     '');
+    fd.append('colonia',             COLONIA_VALOR || '');
+    fd.append('metros_construccion', selVal('sg_m2c'));
+    fd.append('metros_terreno',      selVal('sg_m2t'));
+    fd.append('antiguedad',          selVal('sg_antig'));
+    fd.append('conservacion',        selVal('sg_conserv'));
+    /* Los campos numéricos guardan el punto medio del rango. Aquí va el texto
+       literal de lo que el propietario eligió, para que el asesor no confunda
+       una estimación declarada con un dato medido. */
+    fd.append('datos_declarados',    [
+      selTxt('sg_m2c')     ? 'Construcción: ' + selTxt('sg_m2c')  : '',
+      selTxt('sg_m2t')     ? 'Terreno: '      + selTxt('sg_m2t')     : '',
+      selTxt('sg_antig')   ? 'Antigüedad: '   + selTxt('sg_antig') : '',
+      selTxt('sg_conserv') ? 'Estado: '       + selTxt('sg_conserv')  : '',
+      COLONIA_VALOR        ? 'Colonia: '      + COLONIA_VALOR         : ''
+    ].filter(Boolean).join(' · '));
     fd.append('tiempo_venta',         document.querySelector("#sg_tiempo .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
     fd.append('razon_venta',          document.querySelector("#sg_razon .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
     fd.append('documentos',           [0,1,2,3,4].filter(i=>score["doc"+i]).map(i=>docNames[i]).join(", ")||"Ninguno");
@@ -1021,6 +1153,25 @@ function completar(){
   }
 }
 
+
+// ── LECTORES DE CHIP SELECCIONADO ──
+// selVal devuelve el data-val (el número que va a Airtable); selTxt devuelve
+// la etiqueta que leyó el propietario. "No lo sé" tiene data-val vacío a
+// propósito: no adivinamos por él.
+function selDot(groupId){
+  var d = document.querySelector('#'+groupId+' .sel-dot.on');
+  return d ? d.parentElement : null;
+}
+function selVal(groupId){
+  var it = selDot(groupId);
+  return it ? (it.dataset.val || '') : '';
+}
+function selTxt(groupId){
+  var it = selDot(groupId);
+  if(!it) return '';
+  var m = it.querySelector('.sel-main');
+  return m ? m.textContent.trim() : '';
+}
 
 // ── FOLIO ──
 var currentFolio = "";
