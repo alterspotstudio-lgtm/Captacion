@@ -536,14 +536,14 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
       <div class="fi-label">Habitaciones</div>
       <div class="num-row" style="margin-bottom:16px;">
         <button class="num-btn" onclick="stepNum('nv_hab',-1)">−</button>
-        <div class="num-val" id="nv_hab">0</div>
+        <div class="num-val" id="nv_hab">—</div>
         <button class="num-btn" onclick="stepNum('nv_hab',1)">+</button>
       </div>
 
       <div class="fi-label">Baños</div>
       <div class="num-row" style="margin-bottom:16px;">
         <button class="num-btn" onclick="stepNum('nv_ban',-1)">−</button>
-        <div class="num-val" id="nv_ban">0</div>
+        <div class="num-val" id="nv_ban">—</div>
         <button class="num-btn" onclick="stepNum('nv_ban',1)">+</button>
       </div>
 
@@ -945,16 +945,31 @@ function selOne(el, groupId, key){
 }
 
 // ── STEPPERS ──
-const nv = {nv_hab:0,nv_ban:0,nv_medio_ban:0,nv_est:0};
+/* Habitaciones y baños arrancan SIN CONTESTAR, no en cero. Antes empezaban
+   en 0 y si el propietario no tocaba el botón se mandaba 0 como si fuera un
+   dato real. Una casa con 0 recámaras y 0 baños es imposible, pero Airtable
+   lo guardaba igual y esa basura llegaba hasta la ficha técnica del cliente.
+   Un cero que significa "no contestó" es indistinguible de un cero real. */
+const nv = {nv_hab:null,nv_ban:null,nv_medio_ban:0,nv_est:0};
 /* nv_medio_ban y nv_est siguen declarados arriba pero ya no tienen control en
    pantalla ni punto en el score: sus preguntas se mudaron a la propiedad, donde
    sí se miden. Los campos de Airtable siguen existiendo y llegan vacíos. */
 const nvScore = {nv_hab:"sc_hab",nv_ban:"sc_ban"};
 function stepNum(id,d){
-  nv[id]=Math.max(0,nv[id]+d);
-  document.getElementById(id).textContent=nv[id];
-  if(nvScore[id]) score[nvScore[id]] = nv[id]>0;
+  const sinContestar = (nv[id]===null || nv[id]===undefined);
+  /* El primer toque en "+" deja 1, no 1 más el cero imaginario. El primer
+     toque en "−" no hace nada: no se puede bajar de algo que no existe. */
+  if(sinContestar) nv[id] = (d>0) ? 1 : null;
+  else             nv[id] = Math.max(1, nv[id]+d);
+  const el=document.getElementById(id);
+  if(el) el.textContent = (nv[id]===null||nv[id]===undefined) ? '—' : nv[id];
+  if(nvScore[id]) score[nvScore[id]] = (nv[id]!==null && nv[id]!==undefined && nv[id]>0);
   updProgress();
+}
+/* Si no contestó, la llave viaja vacía. Airtable deja el campo en blanco y
+   el asesor ve que falta, en lugar de creerle a un cero inventado. */
+function nvEnviable(id){
+  return (nv[id]===null || nv[id]===undefined) ? '' : String(nv[id]);
 }
 
 // ── DOCS (multi toggle) ──
@@ -1052,6 +1067,23 @@ function completar(){
     return;
   }
 
+  /* Sin recámaras y baños la ficha técnica nace incompleta y el estudio de
+     mercado sale con "confianza baja". Se pide aquí, una sola vez, en lugar
+     de perseguir el dato después. */
+  if(nv.nv_hab===null || nv.nv_hab===undefined || nv.nv_ban===null || nv.nv_ban===undefined){
+    const faltaId = (nv.nv_hab===null||nv.nv_hab===undefined) ? 'nv_hab' : 'nv_ban';
+    const box = document.getElementById(faltaId);
+    if(box){
+      box.scrollIntoView({behavior:'smooth', block:'center'});
+      /* Mismo aviso que ya usan nombre y teléfono: color de borde, sin
+         sombras nuevas. */
+      box.style.transition='color .2s';
+      box.style.color='rgba(255,90,90,0.95)';
+      setTimeout(function(){ box.style.color=''; }, 2600);
+    }
+    return;
+  }
+
   // Folio activo: se genera antes de enviar a Make, EmailJS y WhatsApp
   currentFolio = currentFolio || generateFolio();
   const folioEl = document.getElementById("folioNumber");
@@ -1089,8 +1121,8 @@ function completar(){
     fd.append('zona',                 document.getElementById("f_zona").value.trim());
     fd.append('precio_estimado',      document.querySelector("#sg_precio .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
 
-    fd.append('habitaciones',         String(nv.nv_hab));
-    fd.append('banos',                String(nv.nv_ban));
+    fd.append('habitaciones',         nvEnviable('nv_hab'));
+    fd.append('banos',                nvEnviable('nv_ban'));
     /* medios_banos y estacionamientos ya no se preguntan aquí, pero la llave se
        sigue mandando vacía: el escenario 5211345 las tiene mapeadas por Field ID
        y quitarlas del payload no rompe nada, pero dejarlas evita cualquier
