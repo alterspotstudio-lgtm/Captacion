@@ -733,10 +733,9 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
       <div class="ef-box-tx" id="expTx">—</div>
     </div>
     <div id="folioBox" style="margin:24px 0;padding:20px;border:1px solid rgba(198,168,107,0.2);border-radius:4px;background:rgba(198,168,107,0.04);text-align:center;">
-      <div style="font-size:8px;letter-spacing:4px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:10px;"><span class="folio-live-dot"></span>Expediente activo</div>
-      <div id="folioNumber" style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:#C6A86B;margin-bottom:10px;">—</div>
-      <div class="folio-note">Este número identifica el registro dentro del sistema y se envía automáticamente al asesor.</div>
-      <button id="folioCopyBtn" onclick="copyFolio()" style="margin-top:14px;font-family:'Montserrat',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:7px 16px;border:1px solid rgba(198,168,107,0.25);background:transparent;color:rgba(198,168,107,0.6);border-radius:2px;cursor:pointer;-webkit-appearance:none;">Copiar folio</button>
+      <div style="font-size:8px;letter-spacing:4px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:10px;"><span class="folio-live-dot"></span>Registro recibido</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#C6A86B;margin-bottom:10px;">EXPEDIENTE EN PREPARACIÓN</div>
+      <div class="folio-note">El sistema asignará el folio oficial al registrar la información y lo mostrará al asesor en su centro de operaciones.</div>
     </div>
     <div class="ef-neri">ENRIQUE NERI · CUERNAVACA</div>
   </div>
@@ -1046,9 +1045,9 @@ function updDiag(){
 const docNames = [
   "Escritura",
   "Predial",
-  "Agua",
-  "INE",
-  "Régimen matrimonial / poderes"
+  "Identificación oficial",
+  "Libertad de gravamen",
+  "Agua / Luz"
 ];
 
 function completar(){
@@ -1084,11 +1083,7 @@ function completar(){
     return;
   }
 
-  // Folio activo: se genera antes de enviar a Make, EmailJS y WhatsApp
-  currentFolio = currentFolio || generateFolio();
-  const folioEl = document.getElementById("folioNumber");
   const folioBox = document.getElementById("folioBox");
-  if(folioEl) folioEl.textContent = currentFolio;
   if(folioBox) folioBox.classList.add("folio-active");
 
   const status   = document.getElementById("diagSt").textContent;
@@ -1116,7 +1111,8 @@ function completar(){
     fd.append('fecha',                now.toLocaleDateString('es-MX'));
     fd.append('hora',                 now.toLocaleTimeString('es-MX'));
     fd.append('estado',               'Lead Nuevo');
-    fd.append('folio',                currentFolio);
+    // El folio oficial lo asigna el registro central. La landing no inventa
+    // un segundo identificador que pueda contradecir al expediente real.
     fd.append('tipo_propiedad',       document.querySelector("#sg_tipo .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
     fd.append('zona',                 document.getElementById("f_zona").value.trim());
     fd.append('precio_estimado',      document.querySelector("#sg_precio .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
@@ -1159,7 +1155,7 @@ function completar(){
     fd.append('asesor',               (new URLSearchParams(location.search).get('asesor')||'').trim());
 
     var waMsg = encodeURIComponent(
-      "Hola, soy " + nombre + ". Folio " + currentFolio + ". Quiero avanzar con la venta de mi propiedad."
+      "Hola, soy " + nombre + ". Acabo de completar el diagnóstico de mi propiedad y quiero avanzar con la venta."
     );
     var waUrl = "https://wa.me/" + WA_NUM + "?text=" + waMsg;
 
@@ -1177,7 +1173,7 @@ function completar(){
   } else {
     // Sin webhook: redirigir a WhatsApp directamente
     var waMsg = encodeURIComponent(
-      "Hola, soy " + nombre + ". Folio " + currentFolio + ". Quiero avanzar con la venta de mi propiedad."
+      "Hola, soy " + nombre + ". Acabo de completar el diagnóstico de mi propiedad y quiero avanzar con la venta."
     );
     setTimeout(function(){
       window.location.href = "https://wa.me/" + WA_NUM + "?text=" + waMsg;
@@ -1205,37 +1201,6 @@ function selTxt(groupId){
   return m ? m.textContent.trim() : '';
 }
 
-// ── FOLIO ──
-var currentFolio = "";
-function generateFolio() {
-  // FOLIO DE PRUEBA FIJO — para que puedas llenar 3 veces y el 3er sea el "apartado"
-  // Después de las pruebas, cambiar a folio automático real
-  var yr = new Date().getFullYear();
-  var rand = String(Math.floor(Math.random() * 9000) + 1000);
-  return "CVA-" + yr + "-" + rand;
-}
-function copyFolio() {
-  if (!currentFolio) return;
-  var btn = document.getElementById("folioCopyBtn");
-  function done(){
-    if(btn){
-      btn.textContent = "Copiado ✓";
-      setTimeout(function(){ btn.textContent = "Copiar folio"; }, 2000);
-    }
-  }
-  try {
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(currentFolio).then(done).catch(function(){
-        window.prompt("Copia tu número de expediente:", currentFolio);
-      });
-    } else {
-      window.prompt("Copia tu número de expediente:", currentFolio);
-    }
-  } catch(e) {
-    window.prompt("Copia tu número de expediente:", currentFolio);
-  }
-}
-
 // ── EMAILJS CONFIG ──
 var EMAILJS_SERVICE_ID  = "service_h6bkpyu";
 var EMAILJS_TEMPLATE_ID = "template_ufmv4vg";
@@ -1248,12 +1213,12 @@ function sendEmail(nombre, telefono, datos) {
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email : "alterspotstudio@gmail.com",
-      subject  : "Expediente " + currentFolio + " - " + nombre,
+      subject  : "Nuevo expediente - " + nombre,
       message  : datos,
       name     : nombre,
       nombre   : nombre,
       telefono : telefono,
-      folio    : currentFolio,
+      folio    : "Asignado por el sistema central",
       progreso : calcPct() + "%",
       email    : "",
       time     : new Date().toLocaleString("es-MX")
