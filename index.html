@@ -733,9 +733,10 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
       <div class="ef-box-tx" id="expTx">—</div>
     </div>
     <div id="folioBox" style="margin:24px 0;padding:20px;border:1px solid rgba(198,168,107,0.2);border-radius:4px;background:rgba(198,168,107,0.04);text-align:center;">
-      <div style="font-size:8px;letter-spacing:4px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:10px;"><span class="folio-live-dot"></span>Registro recibido</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#C6A86B;margin-bottom:10px;">EXPEDIENTE EN PREPARACIÓN</div>
-      <div class="folio-note">El sistema asignará el folio oficial al registrar la información y lo mostrará al asesor en su centro de operaciones.</div>
+      <div style="font-size:8px;letter-spacing:4px;text-transform:uppercase;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:10px;"><span class="folio-live-dot"></span>Expediente activo</div>
+      <div id="folioNumber" style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:#C6A86B;margin-bottom:10px;">ASIGNANDO FOLIO…</div>
+      <div class="folio-note" id="folioNote">Espera un momento. Estamos registrando tu información de forma segura.</div>
+      <button id="folioCopyBtn" onclick="copyFolio()" style="display:none;margin-top:14px;font-family:'Montserrat',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:7px 16px;border:1px solid rgba(198,168,107,0.25);background:transparent;color:rgba(198,168,107,0.6);border-radius:2px;cursor:pointer;-webkit-appearance:none;">Copiar folio</button>
     </div>
     <div class="ef-neri">ENRIQUE NERI · CUERNAVACA</div>
   </div>
@@ -1050,7 +1051,7 @@ const docNames = [
   "Agua / Luz"
 ];
 
-function completar(){
+async function completar(){
   // Meta Pixel: dispara evento Lead al completar el expediente
   try{ if(typeof fbq!=="undefined"){ fbq("track","Lead"); } }catch(e){}
   // Leemos de variables globales porque los campos pueden estar ocultos (display:none) en el stepper
@@ -1111,8 +1112,8 @@ function completar(){
     fd.append('fecha',                now.toLocaleDateString('es-MX'));
     fd.append('hora',                 now.toLocaleTimeString('es-MX'));
     fd.append('estado',               'Lead Nuevo');
-    // El folio oficial lo asigna el registro central. La landing no inventa
-    // un segundo identificador que pueda contradecir al expediente real.
+    // El folio oficial lo asigna el registro central. La landing espera la
+    // respuesta de Make y usa exactamente ese mismo valor en pantalla y WhatsApp.
     fd.append('tipo_propiedad',       document.querySelector("#sg_tipo .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
     fd.append('zona',                 document.getElementById("f_zona").value.trim());
     fd.append('precio_estimado',      document.querySelector("#sg_precio .sel-dot.on")?.parentElement?.querySelector(".sel-main")?.textContent||"");
@@ -1154,30 +1155,56 @@ function completar(){
     // Atribución multi-asesor: slug desde la URL (?asesor=...). Make resuelve slug → nombre real.
     fd.append('asesor',               (new URLSearchParams(location.search).get('asesor')||'').trim());
 
-    var waMsg = encodeURIComponent(
-      "Hola, soy " + nombre + ". Acabo de completar el diagnóstico de mi propiedad y quiero avanzar con la venta."
-    );
-    var waUrl = "https://wa.me/" + WA_NUM + "?text=" + waMsg;
+    try {
+      var response = await fetch(WEBHOOK, { method:'POST', body:fd });
+      if(!response.ok) throw new Error('Respuesta '+response.status);
+      var result = await response.json();
+      var officialFolio = String(result && result.folio || '').trim();
+      if(!officialFolio) throw new Error('El sistema no devolvió el folio oficial');
 
-    // sendBeacon garantiza entrega aunque el navegador cambie de pagina (mobile)
-    var enviado = false;
-    try { enviado = navigator.sendBeacon(WEBHOOK, fd); } catch(e) {}
-    if(enviado){
-      window.location.href = waUrl;
-    } else {
-      fetch(WEBHOOK, { method:'POST', body:fd, keepalive:true })
-        .catch(function(){})
-        .finally(function(){ window.location.href = waUrl; });
+      setOfficialFolio(officialFolio);
+      var waMsg = encodeURIComponent(
+        "Hola, soy " + nombre + ". Mi folio es " + officialFolio + ". Acabo de completar el diagnóstico de mi propiedad y quiero avanzar con la venta."
+      );
+      window.location.href = "https://wa.me/" + WA_NUM + "?text=" + waMsg;
+    } catch(error) {
+      showFolioError();
+      console.error('No se pudo confirmar el folio oficial:', error);
     }
 
   } else {
     // Sin webhook: redirigir a WhatsApp directamente
-    var waMsg = encodeURIComponent(
-      "Hola, soy " + nombre + ". Acabo de completar el diagnóstico de mi propiedad y quiero avanzar con la venta."
-    );
-    setTimeout(function(){
-      window.location.href = "https://wa.me/" + WA_NUM + "?text=" + waMsg;
-    }, 400);
+    showFolioError();
+  }
+}
+
+// ── FOLIO OFICIAL ──
+var currentFolio = '';
+function setOfficialFolio(folio){
+  currentFolio = String(folio||'').trim();
+  var number = document.getElementById('folioNumber');
+  var note = document.getElementById('folioNote');
+  var copy = document.getElementById('folioCopyBtn');
+  if(number) number.textContent = currentFolio;
+  if(note) note.textContent = 'Este es tu folio oficial. También se incluirá automáticamente en el mensaje para tu asesor.';
+  if(copy) copy.style.display = 'inline-block';
+}
+function showFolioError(){
+  var number = document.getElementById('folioNumber');
+  var note = document.getElementById('folioNote');
+  if(number) number.textContent = 'FOLIO NO CONFIRMADO';
+  if(note) note.textContent = 'Tu información no se enviará por WhatsApp sin folio. Comunícate con tu asesor para confirmar el registro.';
+}
+function copyFolio(){
+  if(!currentFolio) return;
+  var btn = document.getElementById('folioCopyBtn');
+  function done(){
+    if(btn){ btn.textContent='Copiado ✓'; setTimeout(function(){btn.textContent='Copiar folio';},2000); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(currentFolio).then(done).catch(function(){window.prompt('Copia tu folio:',currentFolio);});
+  } else {
+    window.prompt('Copia tu folio:',currentFolio);
   }
 }
 
